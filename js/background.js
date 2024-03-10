@@ -43,7 +43,7 @@ var api = {
       rnd: Math.random(),
       options:
         hex_md5(new Date().toString()) + hex_md5(Math.random().toString()),
-      speed: 400,
+      speed: 1000,
       shortcut_full: 90,
       shortcut_visible: 88,
       shortcut_region: 82,
@@ -112,6 +112,7 @@ var api = {
   listenMessages: function() {
     chrome.runtime.onMessage.addListener(function(data, sender, callback) {
       api.stop = false;
+      console.log('data.data: ', data.data);
       switch (data.data) {
         case "createTab":
           chrome.tabs.create({ url: data.url });
