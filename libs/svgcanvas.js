@@ -435,6 +435,7 @@
                     }
                     if (y < this.y1) this.y1 = y;
                     if (y > this.y2) this.y2 = y;
+                    console.log('this.y2: ', this.y2);
                 }
             }
             this.addX = function(x) {
@@ -1752,7 +1753,8 @@
                 var y1 = (this.gradientUnits == 'objectBoundingBox' ? bb.y() + bb.height() * this.attribute('y1').numValue() : this.attribute('y1').toPixels('y'));
                 var x2 = (this.gradientUnits == 'objectBoundingBox' ? bb.x() + bb.width() * this.attribute('x2').numValue() : this.attribute('x2').toPixels('x'));
                 var y2 = (this.gradientUnits == 'objectBoundingBox' ? bb.y() + bb.height() * this.attribute('y2').numValue() : this.attribute('y2').toPixels('y'));
-
+                console.log('y2: ', y2);
+                
                 if (x1 == x2 && y1 == y2) return null;
                 return ctx.createLinearGradient(x1, y1, x2, y2);
             }

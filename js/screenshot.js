@@ -85,6 +85,7 @@ var screenshot = {
   title: '',
   canvas: '',
   canvasToDataURL: '',
+  base64Images: [],
   tryGetUrl: function (callback) {
     // var x;
     screenshot.description = '';
@@ -167,7 +168,10 @@ var screenshot = {
     }, data), screenshot.ans);
   },
   ans: function (mess) {
+    console.log('ans is triggered')
+    console.log('mess: ', mess)
     if (api.stop) {
+      console.log('stopped by api.stop')
       return ;
     }
     if (!mess && chrome.runtime.lastError) {
@@ -203,14 +207,18 @@ var screenshot = {
       upCrop = screenshot.cropData.x1
     }
     var cb = function (data) {
+      // The data is the image captured. No need to check it.
       if (chrome.runtime.lastError) {
         console.error(chrome.runtime.lastError);
       }
       if (api.stop) return ;
+      console.log('mess: ', mess);
+      console.log('data: ', data);
       if ((mess.top || parseInt(mess.top) == 0 )) {
         screenshot.screens.push({left: parseInt(mess.left), top: parseInt(mess.top), data: data});
       }
       if (mess.finish) {
+        console.log('mess.finish: ', mess.finish);
         screenshot.screenShotParams = mess;
         screenshot.createScreenShot();
       } else {
@@ -221,6 +229,7 @@ var screenshot = {
     };
     var timeoutInterval = localStorage.speed;
     setTimeout(function () {
+      console.log('timeout is triggered');
       chrome.windows.update(screenshot.thisWindowId, {focused: true}, function () {
         chrome.tabs.update(screenshot.thisTabId, {active: true}, function () {
           if (chrome.runtime.lastError) {
@@ -233,7 +242,67 @@ var screenshot = {
       })
     }, timeoutInterval);
   },
-  createScreenShot: function () {
+  createScreenShot: async function () {
+
+    mergeBase64Images = function(base64Images) {
+      console.log('base64Images: ', base64Images);
+
+      // Check if all images are base64 encoded strings
+      if (!base64Images.every(image => typeof image === 'string' && image.startsWith('data:image/png;base64,'))) {
+        throw new Error('Invalid input: All elements must be base64 encoded PNG images');
+      }
+  
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+  
+      // Initialize variables
+      let totalHeight = 0;
+      let imagePromises = [];
+  
+      // Loop through each base64 image
+      for (const imageData of base64Images) {
+        const imagePromise = new Promise((resolve, reject) => {
+          // Create an image element
+          const image = new Image();
+  
+          // Load the image from base64 data
+          image.onload = () => {
+            // Add image height to total height
+            totalHeight += image.height;
+  
+            // Draw the image onto the canvas at current position
+            ctx.drawImage(image, 0, totalHeight - image.height);
+  
+            // Resolve the promise
+            resolve();
+          };
+  
+          image.onerror = (error) => {
+            reject(error);
+          };
+  
+          image.src = imageData;
+        });
+  
+        // Add promise to the array
+        imagePromises.push(imagePromise);
+      }
+  
+      // Wait for all images to load and be drawn
+      return Promise.all(imagePromises).then(() => {
+        // Set canvas height based on total image heights
+        canvas.height = totalHeight;
+  
+        // Return the merged image as data URL
+        return canvas.toDataURL('image/png');
+      });
+    }
+
+    console.log('createScreenShot is triggered');
+
+    console.log('Try the latest function');
+
     var mess = screenshot.screenShotParams;
     chrome.tabs.sendMessage(screenshot.thisTabId, {type: 'finish'});
     var img = [];
@@ -264,7 +333,12 @@ var screenshot = {
     var firstTime = true;
     var i = 0;
     loadImage = function (i) {
+      console.log('loadImage is triggered')
       if (api.stop) return;
+      console.log('i: ', i);
+      console.log('screenshot.screens[i]: ', screenshot.screens[i]);
+      const data = screenshot.screens[i].data;
+      console.log(data);
       ctx = screenshot.canvas.getContext('2d');
       img[i] = $('<img tag=' + i + '/>');
       img[i].load(function () {
@@ -272,7 +346,18 @@ var screenshot = {
         i = parseInt($(this).attr('tag'));
         if (firstTime) {
           screenshot.canvas.width = mess.width || img[i][0].width;
+          // The observed problem is that the canvas is not being resized to the correct height.
+          // screenshot.canvas.height = mess.height || img[i][0].height;
+          const length = screenshot.screens.length;
           screenshot.canvas.height = mess.height || img[i][0].height;
+          if (length > 1 && screenshot.canvas.height < img[i][0].height * length) {
+            screenshot.canvas.height = img[i][0].height * length;
+          }
+          console.log('screenshot.canvas.height: ', screenshot.canvas.height);
+          console.log('mess.height: ', mess.height);
+          console.log('img[i][0].height: ', img[i][0].height);
+          console.log('length: ', length);
+          console.log('img[i][0].height * length: ', img[i][0].height * length);
           firstTime = false;
           if (theHeader) {
             screenshot.canvas.height += 20;
@@ -284,6 +369,7 @@ var screenshot = {
         //img[i][0].width=200;
         //
         theTop = screenshot.screens[i].top + offsetTop
+        console.log('theTop: ', theTop);
         ctx.drawImage(img[i][0], screenshot.screens[i].left, theTop);
         screenshot.screens[i].data = null
         // screenshot.screens=null
@@ -297,7 +383,12 @@ var screenshot = {
         // םיצבקה לכ תא ונמייס //
         /////////////////////////////
         if (i == screenshot.screens.length - 1) {
+          console.log('i has reached the end of screenshot.screens, start finalization.');
+          // export ctx to image
+          console.log('screenshot.canvas.toDataURL(): ', screenshot.canvas.toDataURL());
+
           if (screenshot.runCallback) {
+            console.log('screenshot.runCallback flow.');
             screenshot.callback(screenshot.canvas.toDataURL());
             screenshot.callback = null;
             if (!screenshot.keepIt) {
@@ -310,6 +401,7 @@ var screenshot = {
             }
 
           } else {
+            console.log('not screenshot.runCallback flow.');
 
             chrome.tabs.create({url: chrome.extension.getURL('editor.html') + '#last'});
 
@@ -325,6 +417,7 @@ var screenshot = {
         loadImage(++i);
       });
       try {
+        console.log('try started')
         img[i].attr('src', screenshot.screens[i].data);
         delete screenshot.screens[i].data;
       } catch (e) {
@@ -333,5 +426,9 @@ var screenshot = {
     }
     if (api.stop) return
     loadImage(0);
+
   }, 
+  
+
 };
+

@@ -10154,6 +10154,7 @@ jQuery.fn.extend({
 });
 
 // Create scrollLeft and scrollTop methods
+// Original Code START
 jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( method, prop ) {
 	var top = /Y/.test( prop );
 
@@ -10167,10 +10168,20 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 					elem[ method ];
 			}
 
+			// This is the part which scrolls the page.
+			// In certain situations it might not work for the website.
 			if ( win ) {
-				win.scrollTo(
-					!top ? val : jQuery( win ).scrollLeft(),
-					top ? val : jQuery( win ).scrollTop()
+				console.log('direction: ', top ? 'top' : 'left');
+				if (top) {
+					console.log('scrolling to', val, 'on', document.documentElement.scrollHeight);
+				}
+				// win.scrollTo(
+				// 	!top ? val : jQuery( win ).scrollLeft(),
+				// 	top ? val : jQuery( win ).scrollTop()
+				// );
+				win.scrollBy(
+					!top ? val - jQuery( win ).scrollLeft() : 0,
+					top ? val - jQuery( win ).scrollTop() : 0
 				);
 
 			} else {
@@ -10179,6 +10190,7 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 		}, method, val, arguments.length, null );
 	};
 });
+// Original Code END
 
 // Add the top/left cssHooks using jQuery.fn.position
 // Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084

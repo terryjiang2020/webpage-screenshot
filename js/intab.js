@@ -95,15 +95,31 @@ var page = {
     page.scrollToCurrent();
   },
   computeNextScreen: function () {
-    if (cropData)
-      if (page.currentX + page.windowWidth > cropData.x2 && page.currentY + page.windowHeight > cropData.y2) return false
+    // if (
+    //   cropData &&
+    //   page.currentX + page.windowWidth > cropData.x2 &&
+    //   page.currentY + page.windowHeight > cropData.y2
+    // ) {
+    //   console.log('computeNextScreen returns false 2')
+    //   console.log('page.currentX + page.windowWidth: ', page.currentX + page.windowWidth);
+    //   console.log('cropData.x2: ', cropData.x2);
+    //   console.log('page.currentY + page.windowHeight: ', page.currentY + page.windowHeight);
+    //   console.log('cropData.y2: ', cropData.y2);
+    //   return false
+    // }
     if (page.currentX + page.windowWidth < page.documentWidth) {
       page.currentX += page.windowWidth;
       return true;
     } else {
+      console.log('page.currentY + page.windowHeight: ', page.currentY + page.windowHeight);
+      console.log('page.documentHeight: ', page.documentHeight);
       page.currentX = 0;
-      if (page.currentY + page.windowHeight >= page.documentHeight)
+      if (page.currentY + page.windowHeight >= page.documentHeight) {
+        console.log('computeNextScreen returns false')
+        page.documentHeight = page.currentY + page.windowHeight
+        console.log('Try to update documentHeight: ', page.documentHeight);
         return false
+      }
       else {
         page.currentY += page.windowHeight;
         return true;
@@ -267,10 +283,12 @@ var page = {
         scrollLeft: document.body.scrollLeft
       };
       if (!mess.scroll) {
+        console.log('!mess.scroll, window.innerHeight: ', window.innerHeight);
         defaults.x1 = window.scrollX;
         defaults.y1 = window.scrollY;
         defaults.x2 = window.innerWidth + defaults.x1;
         defaults.y2 = window.innerHeight + defaults.y1;
+        console.log('defaults.y2: ', defaults.y2);
       }
       cropData = $.extend(defaults, mess.cropData);
 
@@ -331,6 +349,11 @@ var page = {
 
       ans.finish = !mess.scroll || !page.computeNextScreen();
       if (ans.finish) {
+        console.log('ans.finish = true');
+        console.log('!mess.scroll: ', !mess.scroll);
+        console.log('!page.computeNextScreen(): ', !page.computeNextScreen());
+        // Here is where the calculation goes wrong. Watch closely.
+        console.log('cropData: ', cropData);
         ans.width = parseInt((cropData.x2 - cropData.x1), 10) * zoomLevel();
         ans.height = parseInt((cropData.y2 - cropData.y1), 10) * zoomLevel();
         ans.url = document.location.toString();
@@ -377,6 +400,7 @@ var page = {
     document.addEventListener('keydown', page.docKeyDown)
   }
 };
+console.log('page: ', page)
 chrome.runtime.onMessage.addListener(page.onRequest);
 chrome.runtime.sendMessage({
   data: 'isEnableShortCuts'

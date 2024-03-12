@@ -58,6 +58,7 @@ function loadCropper () {
 			x2 = rx2;
 			y1 = ry1;
 			y2 = ry2;
+			console.log('y2: ', y2);
 
 
 			$('<div id=crop_helper><div id=crop_center></div><div id=crop_helper_bottom></div><div id=crop_helper_left></div><div id=crop_helper_top></div><div id=crop_helper_right></div></div>').appendTo(document.body);
@@ -281,6 +282,7 @@ function loadCropper () {
 				}
 				if (cord == 's') {
 					window.crop.y2 = e.pageY;
+					console.log('window.crop.y2: ', window.crop.y2);
 				}
 				window.crop.move = cord
 				scrollOnMove(e)
