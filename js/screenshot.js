@@ -21,6 +21,13 @@ var screenshot = {
   },
 
   captureAll: function (data) {
+    chrome.windows.getCurrent(function (window) {
+      var updateInfo = {
+        width: 1440,
+        height: 710,
+      };
+      (updateInfo.state = "normal"), chrome.windows.update(window.id, updateInfo);
+    });
     $.extend(screenshot, {
       callback: null,
       runCallback: false,
