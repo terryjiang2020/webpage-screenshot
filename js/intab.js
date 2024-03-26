@@ -107,6 +107,30 @@ var page = {
     //   console.log('cropData.y2: ', cropData.y2);
     //   return false
     // }
+
+    const scrollableElements = [...document.querySelectorAll('*')];
+    console.log('scrollableElements: ', scrollableElements);
+
+    for (let element of scrollableElements) {
+      if (
+        element.scrollHeight > element.clientHeight &&
+        element.scrollTop + element.clientHeight < element.scrollHeight &&
+        (
+          getComputedStyle(element).overflowY == 'scroll' ||
+          getComputedStyle(element).overflowY == 'auto'
+        )
+      ) {
+        console.log('scrollable element detected: ', element.scrollHeight, element.clientHeight, element.scrollTop);
+        console.log('element.scrollHeight > element.clientHeight: ', element.scrollHeight > element.clientHeight);
+        console.log('element.scrollTop + element.clientHeight < element.scrollHeight: ', element.scrollTop + element.clientHeight < element.scrollHeight);
+        console.log('getComputedStyle(element).overflowY: ', getComputedStyle(element).overflowY);
+        console.log('getComputedStyle(element).overflowY == scroll: ', getComputedStyle(element).overflowY == 'scroll');
+        console.log('getComputedStyle(element).overflowY == auto: ', getComputedStyle(element).overflowY == 'auto');
+        element.scrollTop += element.clientHeight; // Modify the scroll amount as per your requirement
+        return true;
+      }
+    }
+
     if (page.currentX + page.windowWidth < page.documentWidth) {
       page.currentX += page.windowWidth;
       return true;
