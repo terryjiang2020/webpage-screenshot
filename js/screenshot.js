@@ -174,7 +174,7 @@ var screenshot = {
       processFixedElements: screenshot.processFixedElements
     }, data), screenshot.ans);
   },
-  ans: function (mess) {
+  ans: async function (mess) {
     console.log('ans is triggered')
     console.log('mess: ', mess)
     if (api.stop) {
@@ -201,6 +201,27 @@ var screenshot = {
       mess.top=0;
       mess.left=0
     }
+    console.log('chrome storage get scrollCount');
+    const scrollCount = await new Promise(resolve => chrome.storage.local.get('scrollCount', (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error accessing storage:', chrome.runtime.lastError);
+      } else {
+        const value = result.key;
+        console.log('Retrieved value:', value);
+        resolve(value);
+      }
+    }));
+    console.log('chrome storage get documentHeight');
+    const documentHeight = await new Promise(resolve => chrome.storage.local.get('documentHeight', (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error accessing storage:', chrome.runtime.lastError);
+      } else {
+        const value = result.key;
+        console.log('Retrieved value:', value);
+        resolve(value);
+      }
+    }));
+    mess.top += (scrollCount || 0) * (documentHeight || 0);
     if (mess && mess.description) {
       screenshot.description = mess.description
     }
@@ -221,6 +242,8 @@ var screenshot = {
       if (api.stop) return ;
       console.log('mess: ', mess);
       console.log('data: ', data);
+      console.log("scrollCount: ", scrollCount)
+      console.log("documentHeight: ", documentHeight)
       if ((mess.top || parseInt(mess.top) == 0 )) {
         screenshot.screens.push({left: parseInt(mess.left), top: parseInt(mess.top), data: data});
       }
@@ -376,6 +399,9 @@ var screenshot = {
         //img[i][0].width=200;
         //
         theTop = screenshot.screens[i].top + offsetTop
+        if (!screenshot.screens[i].top && i > 0) {
+          theTop += img[i][0].height * i;
+        }
         console.log('theTop: ', theTop);
         ctx.drawImage(img[i][0], screenshot.screens[i].left, theTop);
         screenshot.screens[i].data = null

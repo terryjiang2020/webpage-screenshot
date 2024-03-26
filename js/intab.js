@@ -13,6 +13,7 @@ function zoomLevel() {
 var hideTheScrollBars;
 var cropData;
 var $window = $(window);
+var scrollCount = 0;
 
 function exchangeElementStyle(element, styles, value) {
   if (!Array.isArray(styles)) {
@@ -65,6 +66,8 @@ var page = {
     // if (!cropData) page.windowWidth+=  (page.isWidthScroll ? -16 : 0);
     page.documentWidth = document.body.scrollWidth;
     page.documentHeight = document.body.scrollHeight;
+    console.log('chrome storage set documentHeight');
+    chrome.storage.local.set({'documentHeight': page.documentHeight});
     page.windowHeight = window.innerHeight;
     // if(!cropData)			page.windowHeight+= (page.isHeightScroll ? -16 : 0);
     page.currentX = 0;
@@ -127,6 +130,9 @@ var page = {
         console.log('getComputedStyle(element).overflowY == scroll: ', getComputedStyle(element).overflowY == 'scroll');
         console.log('getComputedStyle(element).overflowY == auto: ', getComputedStyle(element).overflowY == 'auto');
         element.scrollTop += element.clientHeight; // Modify the scroll amount as per your requirement
+        scrollCount++;
+        console.log('chrome storage set scrollCount');
+        chrome.storage.local.set({'scrollCount': scrollCount});
         return true;
       }
     }
@@ -309,7 +315,7 @@ var page = {
       if (!mess.scroll) {
         console.log('!mess.scroll, window.innerHeight: ', window.innerHeight);
         defaults.x1 = window.scrollX;
-        defaults.y1 = window.scrollY;
+        defaults.y1 = window.scrollY + $(window).scrollTop() * scrollCount;
         defaults.x2 = window.innerWidth + defaults.x1;
         defaults.y2 = window.innerHeight + defaults.y1;
         console.log('defaults.y2: ', defaults.y2);
@@ -322,6 +328,13 @@ var page = {
       // for(var key in cropData) {cropData[key]=cropData[key] * zoomLevel()  }
     }
     if (mess.type == 'takeCapture') {
+      mess.top = parseInt(
+        $(window).scrollTop() * zoomLevel() -
+        cropData.y1 * zoomLevel() +
+        document.body.scrollHeight * zoomLevel() * scrollCount,
+        10
+      );
+      console.log('mess.top: ', mess.top);
       var ans = {};
       for (var i = 0; i < document.getElementsByTagName('meta').length; i++) {
         var a = document.getElementsByTagName('meta')[i];
@@ -368,7 +381,13 @@ var page = {
       }
       var scrollTop=$(window).scrollTop()
 
-      ans.top = parseInt($(window).scrollTop() * zoomLevel() - cropData.y1 * zoomLevel(), 10);
+      // ans.top = parseInt($(window).scrollTop() * zoomLevel() - cropData.y1 * zoomLevel(), 10);
+      ans.top = parseInt(
+        $(window).scrollTop() * zoomLevel() -
+        cropData.y1 * zoomLevel() +
+        $(window).scrollTop() * zoomLevel() * scrollCount,
+        10
+      );
       ans.left = parseInt(document.body.scrollLeft * zoomLevel() - cropData.x1 * zoomLevel(), 10);
 
       ans.finish = !mess.scroll || !page.computeNextScreen();
@@ -382,6 +401,7 @@ var page = {
         ans.height = parseInt((cropData.y2 - cropData.y1), 10) * zoomLevel();
         ans.url = document.location.toString();
         ans.title = document.title;
+        scrollCount = 0;
         ans.description = $('meta[name=description]').attr('content');
         if (window.onfinish)
           window.onfinish()
