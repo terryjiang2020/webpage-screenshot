@@ -201,27 +201,6 @@ var screenshot = {
       mess.top=0;
       mess.left=0
     }
-    console.log('chrome storage get scrollCount');
-    const scrollCount = await new Promise(resolve => chrome.storage.local.get('scrollCount', (result) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error accessing storage:', chrome.runtime.lastError);
-      } else {
-        const value = result.key;
-        console.log('Retrieved value:', value);
-        resolve(value);
-      }
-    }));
-    console.log('chrome storage get documentHeight');
-    const documentHeight = await new Promise(resolve => chrome.storage.local.get('documentHeight', (result) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error accessing storage:', chrome.runtime.lastError);
-      } else {
-        const value = result.key;
-        console.log('Retrieved value:', value);
-        resolve(value);
-      }
-    }));
-    mess.top += (scrollCount || 0) * (documentHeight || 0);
     if (mess && mess.description) {
       screenshot.description = mess.description
     }
@@ -241,9 +220,7 @@ var screenshot = {
       }
       if (api.stop) return ;
       console.log('mess: ', mess);
-      console.log('data: ', data);
-      console.log("scrollCount: ", scrollCount)
-      console.log("documentHeight: ", documentHeight)
+      // console.log('data: ', data);
       if ((mess.top || parseInt(mess.top) == 0 )) {
         screenshot.screens.push({left: parseInt(mess.left), top: parseInt(mess.top), data: data});
       }
@@ -368,7 +345,7 @@ var screenshot = {
       console.log('i: ', i);
       console.log('screenshot.screens[i]: ', screenshot.screens[i]);
       const data = screenshot.screens[i].data;
-      console.log(data);
+      // console.log(data);
       ctx = screenshot.canvas.getContext('2d');
       img[i] = $('<img tag=' + i + '/>');
       img[i].load(function () {
@@ -399,12 +376,31 @@ var screenshot = {
         //img[i][0].width=200;
         //
         theTop = screenshot.screens[i].top + offsetTop
+        console.log('theTop: ', theTop);
         if (!screenshot.screens[i].top && i > 0) {
           theTop += img[i][0].height * i;
         }
+        // else if (screenshot.screens[i - 1] && !screenshot.screens[i - 1].top && i - 1 > 0) {
+        //   console.log('screenshot.screens[i].top: ', screenshot.screens[i].top);
+        //   console.log('offsetTop: ', offsetTop);
+        //   theTop += screenshot.screens[i - 1].top;
+        // }
+        else {
+          console.log('screenshot.screens: ', screenshot.screens)
+          if (screenshot.screens.filter(screen => !screen.top).length) {
+            console.log('screenshot.screens.filter(screen => !screen.top).pop().top: ', screenshot.screens.filter(screen => !screen.top).pop().top);
+            theTop += screenshot.screens.filter(screen => !screen.top).pop().theTop;
+          }
+        }
+        if (isNaN(theTop)) {
+          theTop = 0;
+        }
+        
         console.log('theTop: ', theTop);
+        console.log('theTop add height condition: ', !screenshot.screens[i].top && i > 0);
         ctx.drawImage(img[i][0], screenshot.screens[i].left, theTop);
         screenshot.screens[i].data = null
+        screenshot.screens[i].theTop = theTop;
         // screenshot.screens=null
         img[i][0].src = '';
         img[i].off('load')
@@ -418,7 +414,7 @@ var screenshot = {
         if (i == screenshot.screens.length - 1) {
           console.log('i has reached the end of screenshot.screens, start finalization.');
           // export ctx to image
-          console.log('screenshot.canvas.toDataURL(): ', screenshot.canvas.toDataURL());
+          // console.log('screenshot.canvas.toDataURL(): ', screenshot.canvas.toDataURL());
 
           if (screenshot.runCallback) {
             console.log('screenshot.runCallback flow.');

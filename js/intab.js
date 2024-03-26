@@ -66,8 +66,6 @@ var page = {
     // if (!cropData) page.windowWidth+=  (page.isWidthScroll ? -16 : 0);
     page.documentWidth = document.body.scrollWidth;
     page.documentHeight = document.body.scrollHeight;
-    console.log('chrome storage set documentHeight');
-    chrome.storage.local.set({'documentHeight': page.documentHeight});
     page.windowHeight = window.innerHeight;
     // if(!cropData)			page.windowHeight+= (page.isHeightScroll ? -16 : 0);
     page.currentX = 0;
@@ -131,8 +129,6 @@ var page = {
         console.log('getComputedStyle(element).overflowY == auto: ', getComputedStyle(element).overflowY == 'auto');
         element.scrollTop += element.clientHeight; // Modify the scroll amount as per your requirement
         scrollCount++;
-        console.log('chrome storage set scrollCount');
-        chrome.storage.local.set({'scrollCount': scrollCount});
         return true;
       }
     }
@@ -381,13 +377,13 @@ var page = {
       }
       var scrollTop=$(window).scrollTop()
 
-      // ans.top = parseInt($(window).scrollTop() * zoomLevel() - cropData.y1 * zoomLevel(), 10);
-      ans.top = parseInt(
-        $(window).scrollTop() * zoomLevel() -
-        cropData.y1 * zoomLevel() +
-        $(window).scrollTop() * zoomLevel() * scrollCount,
-        10
-      );
+      ans.top = parseInt($(window).scrollTop() * zoomLevel() - cropData.y1 * zoomLevel(), 10);
+      // ans.top = parseInt(
+      //   $(window).scrollTop() * zoomLevel() -
+      //   cropData.y1 * zoomLevel() +
+      //   $(window).scrollTop() * zoomLevel() * scrollCount,
+      //   10
+      // );
       ans.left = parseInt(document.body.scrollLeft * zoomLevel() - cropData.x1 * zoomLevel(), 10);
 
       ans.finish = !mess.scroll || !page.computeNextScreen();
